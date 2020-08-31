@@ -1,0 +1,15 @@
+---
+apiVersion: vcn.cloud/v1
+kind: VelocloudBP
+metadata:
+    name: velokube1
+spec:
+    profile: Quick Start Profile
+    name: app1
+    service: testapp-ui
+    dport: 80
+    service-class:  transactional
+    link-policy: fixed
+    service-group: PUBLIC_WIRED
+    priority: low
+    bandwidth-limit: 20
