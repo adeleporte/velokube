@@ -1,0 +1,183 @@
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+    name: velocloudbps.vcn.cloud
+spec:
+    scope: Namespaced
+    group: vcn.cloud
+    version: v1
+    names:
+      kind: VelocloudBP
+      plural: velocloudbps
+      singular: velocloudbp
+      shortNames:
+      - velo
+    validation:
+        openAPIV3Schema:
+          properties:
+            spec:
+              type: object
+              properties:
+                profile:
+                    type: string
+                    description: profile
+                    enum:
+                    - Quick Start Profile
+                name:
+                    type: string
+                    description: name
+                    #pattern: '^(.*).vcn.cloud$'
+                service:
+                    type: string
+                    description: kubernetes service
+                dport:
+                    type: integer
+                    description: dport
+                service-class:
+                    type: string
+                    description: sc
+                    enum:
+                    - realtime
+                    - transactional
+                    -  bulk
+                link-policy:
+                    type: string
+                    description: lp
+                    enum:
+                    - auto
+                    - fixed
+                service-group:
+                    type: string
+                    description: sg
+                    enum:
+                    - PRIVATE_WIRED
+                    - PUBLIC_WIRED
+                    - ALL
+                priority:
+                    type: string
+                    description: priority
+                    enum:
+                    - high
+                    - normal
+                    - low
+                bandwidth-limit:
+                    type: integer
+                    description: bpl
+                    minimum: 0
+                    maximum: 50
+    additionalPrinterColumns:
+      - name: Profile
+        type: string
+        description: The profile
+        JSONPath: .spec.profile
+      - name: Service
+        type: string
+        description: The k8s service
+        JSONPath: .spec.service
+      - name: Service Class
+        type: string
+        priority: 1
+        description: The service class
+        JSONPath: .spec.service-class
+      - name: Priority
+        type: string
+        priority: 1
+        description: The priority
+        JSONPath: .spec.priority
+      - name: Link Policy
+        type: string
+        priority: 1
+        description: The link Policy
+        JSONPath: .spec.link-policy
+      - name: Bandwidth Limit
+        type: integer
+        priority: 1
+        description: The bandwidth Limit
+        JSONPath: .spec.bandwidth-limit
+      - name: Service Group
+        type: string
+        priority: 1
+        description: The Velocloud Service Group
+        JSONPath: .spec.service-group
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+    name: velocloud-group-admin
+    #namespace: default
+rules:
+- apiGroups:
+  - vcn.cloud
+  - ""
+  resources:
+  - velocloudbps
+  - velocloudbps/finalizers
+  - services
+  verbs: [ get, list, create, update, delete, deletecollection, watch ]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+    name: velocloud-group-rbac
+    #namespace: default
+subjects:
+- kind: ServiceAccount
+  name: default
+  #namespace: default
+roleRef:
+    kind: Role
+    name: velocloud-group-admin
+    apiGroup: rbac.authorization.k8s.io 
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: velocloud-config
+  namespace: default
+data:
+  vco_url: https://vco22-fra1.velocloud.net/portal/rest
+  token: changeme
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: operator
+    labels:
+      app: operator
+spec:
+    selector:
+      matchLabels:
+        app: operator
+    template:
+      metadata:
+        labels:
+          app: operator
+      spec:
+        containers:
+        - name: app
+          image: adeleporte/velokube
+          env:
+          - name: res_namespace
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: VCO_URL
+            valueFrom:
+              configMapKeyRef:
+                name: velocloud-config
+                key: vco_url
+          - name: VCO_TOKEN
+            valueFrom:
+              configMapKeyRef:
+                name: velocloud-config
+                key: token
+
+
+
+
+    
