@@ -1,0 +1,129 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: testapp-ui
+  labels:
+    app: testapp-ui
+    service: testapp-ui
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: testapp-ui
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: testapp-ui-v1
+  labels:
+    app: testapp-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: testapp-ui
+  template:
+    metadata:
+      labels:
+        app: testapp-ui
+    spec:
+      containers:
+      - name: testapp-ui
+        image: adeleporte/testapp-web
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+---
+##################################################################################################
+# TestApp-App services
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: testapp-app
+  labels:
+    app: testapp-app
+    service: testapp-app
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    name: http
+  selector:
+    app: testapp-app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: testapp-app-v1
+  labels:
+    app: testapp-app
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: testapp-app
+  template:
+    metadata:
+      labels:
+        app: testapp-app
+        version: v1
+    spec:
+      containers:
+      - name: testapp-app
+        image: adeleporte/testapp-app
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+---
+##################################################################################################
+# TestApp services
+##################################################################################################
+
+##################################################################################################
+# TestApp-DB services
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: testapp-db
+  labels:
+    app: testapp-db
+    service: testapp-db
+spec:
+  type: ClusterIP
+  ports:
+  - port: 27017
+    name: tcp
+  selector:
+    app: testapp-db
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: testapp-db
+  labels:
+    app: testapp-db
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: testapp-db
+  template:
+    metadata:
+      labels:
+        app: testapp-db
+        version: v1
+    spec:
+      containers:
+      - name: testapp-db
+        image: mongo
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 27017
